@@ -16,12 +16,10 @@ void jit_base::push(const Xbyak::Xmm& xmm) {
     if (xmm.isXMM()) {
         sub(rsp, xmm_len);
         uni_vmovdqu(ptr[rsp], xmm);
-    }
-    else if (xmm.isYMM()) {
+    } else if (xmm.isYMM()) {
         sub(rsp, ymm_len);
         uni_vmovdqu(ptr[rsp], Xbyak::Ymm{ xmm.getIdx() });
-    }
-    else if (xmm.isZMM()) {
+    } else if (xmm.isZMM()) {
         sub(rsp, zmm_len);
         uni_vmovdqu(ptr[rsp], Xbyak::Zmm{ xmm.getIdx() });
     }
@@ -31,12 +29,10 @@ void jit_base::pop(const Xbyak::Xmm& xmm) {
     if (xmm.isXMM()) {
         uni_vmovdqu(xmm, ptr[rsp]);
         add(rsp, xmm_len);
-    }
-    else if (xmm.isYMM()) {
+    } else if (xmm.isYMM()) {
         uni_vmovdqu(Xbyak::Ymm{ xmm.getIdx() }, ptr[rsp]);
         add(rsp, ymm_len);
-    }
-    else if (xmm.isZMM()) {
+    } else if (xmm.isZMM()) {
         uni_vmovdqu(Xbyak::Zmm{ xmm.getIdx() }, ptr[rsp]);
         add(rsp, zmm_len);
     }
@@ -47,15 +43,12 @@ void jit_base::uni_vaddps(const Xbyak::Xmm& x,
     const Xbyak::Operand& op2) {
     if (is_valid_isa(x64::avx)) {
         vaddps(x, op1, op2);
-    }
-    else {
+    } else {
         if (x.getIdx() == op1.getIdx()) {
             addps(x, op2);
-        }
-        else if (x.isEqualIfNotInherited(op2)) {
+        } else if (x.isEqualIfNotInherited(op2)) {
             addps(x, op1);
-        }
-        else {
+        } else {
             movups(x, op1);
             addps(x, op2);
         }
@@ -67,18 +60,15 @@ void jit_base::uni_vsubps(const Xbyak::Xmm& x,
     const Xbyak::Operand& op2) {
     if (is_valid_isa(x64::avx)) {
         vsubps(x, op1, op2);
-    }
-    else {
+    } else {
         if (x.getIdx() == op1.getIdx()) {
             subps(x, op2);
-        }
-        else if (x.isEqualIfNotInherited(op2)) {
+        } else if (x.isEqualIfNotInherited(op2)) {
             push(op1);
             subps(op1, op2);
             movups(x, op1);
             pop(op1);
-        }
-        else {
+        } else {
             movups(x, op1);
             subps(x, op2);
         }
@@ -91,18 +81,15 @@ void jit_base::uni_vcmpps(const Xbyak::Xmm& x,
     const int cmp_predicate) {
     if (is_valid_isa(x64::avx)) {
         vcmpps(x, op1, op2, cmp_predicate);
-    }
-    else {
+    } else {
         if (x.getIdx() == op1.getIdx()) {
             cmpps(x, op2, cmp_predicate);
-        }
-        else if (x.isEqualIfNotInherited(op2)) {
+        } else if (x.isEqualIfNotInherited(op2)) {
             push(op1);
             cmpps(op1, op2, cmp_predicate);
             movups(x, op1);
             pop(op1);
-        }
-        else {
+        } else {
             movups(x, op1);
             cmpps(x, op2, cmp_predicate);
         }
@@ -158,8 +145,7 @@ void jit_base::uni_vpaddd(const Xbyak::Ymm& vDst,
     const Xbyak::Operand& op) {
     if (is_valid_isa(x64::avx2)) {
         vpaddd(vDst, vSrc, op);
-    }
-    else if (is_valid_isa(x64::avx)) {
+    } else if (is_valid_isa(x64::avx)) {
         Xbyak::Xmm xmmDst(vDst.getIdx());
         vmovups(vDst, vSrc);
         if (op.isYMM()) {
@@ -171,23 +157,19 @@ void jit_base::uni_vpaddd(const Xbyak::Ymm& vDst,
             paddd(xmmDst, xmmOp);
             vperm2f128(vDst, vDst, vDst, 0x1);
             vperm2f128(ymmOp, ymmOp, ymmOp, 0x1);
-        }
-        else if (op.isMEM()) {
+        } else if (op.isMEM()) {
             const int vlen = x64::cpu_isa_traits<x64::sse41>::vlen;
             paddd(xmmDst, op.getAddress());
             vperm2f128(vDst, vDst, vDst, 0x1);
             paddd(xmmDst, ptr[op.getAddress().getRegExp() + vlen]);
             vperm2f128(vDst, vDst, vDst, 0x1);
-        }
-        else {
+        } else {
             IE_THROW() << "Not supported operand type.";
         }
-    }
-    else if (is_valid_isa(x64::sse41)) {
+    } else if (is_valid_isa(x64::sse41)) {
         assert(vDst.getIdx() != vSrc.getIdx());
         paddd(vDst, op);
-    }
-    else {
+    } else {
         IE_THROW() << "Not defined behavior for instruction 'vpaddd' in current instructions set.";
     }
 }
@@ -197,8 +179,7 @@ void jit_base::uni_vpsubd(const Xbyak::Ymm& vDst,
     const Xbyak::Operand& op) {
     if (is_valid_isa(x64::avx2)) {
         vpsubd(vDst, vSrc, op);
-    }
-    else if (is_valid_isa(x64::avx)) {
+    } else if (is_valid_isa(x64::avx)) {
         Xbyak::Xmm xmmDst(vDst.getIdx());
         vmovups(vDst, vSrc);
         if (op.isYMM()) {
@@ -210,23 +191,19 @@ void jit_base::uni_vpsubd(const Xbyak::Ymm& vDst,
             psubd(xmmDst, xmmOp);
             vperm2f128(vDst, vDst, vDst, 0x1);
             vperm2f128(ymmOp, ymmOp, ymmOp, 0x1);
-        }
-        else if (op.isMEM()) {
+        } else if (op.isMEM()) {
             const int vlen = x64::cpu_isa_traits<x64::sse41>::vlen;
             psubd(xmmDst, op.getAddress());
             vperm2f128(vDst, vDst, vDst, 0x1);
             psubd(xmmDst, ptr[op.getAddress().getRegExp() + vlen]);
             vperm2f128(vDst, vDst, vDst, 0x1);
-        }
-        else {
+        } else {
             IE_THROW() << "Not supported operand type.";
         }
-    }
-    else if (is_valid_isa(x64::sse41)) {
+    } else if (is_valid_isa(x64::sse41)) {
         assert(vDst.getIdx() != vSrc.getIdx());
         psubd(vDst, op);
-    }
-    else {
+    } else {
         IE_THROW() << "Not defined behavior for instruction 'vpsubd' in current instructions set.";
     }
 }
@@ -236,8 +213,7 @@ void jit_base::uni_vdivps(const Xbyak::Xmm& vDst,
     const Xbyak::Operand& op2) {
     if (is_valid_isa(x64::avx)) {
         vdivps(vDst, op1, op2);
-    }
-    else {
+    } else {
         if (!vDst.isEqualIfNotInherited(op1)) {
             movups(vDst, op1);
         }
@@ -250,8 +226,7 @@ void jit_base::uni_vandps(const Xbyak::Xmm& vDst,
     const Xbyak::Operand& op) {
     if (is_valid_isa(x64::avx)) {
         vandps(vDst, vSrs, op);
-    }
-    else {
+    } else {
         if (!vDst.isEqualIfNotInherited(vSrs)) {
             movups(vDst, vSrs);
         }
@@ -264,8 +239,7 @@ void jit_base::uni_vandnps(const Xbyak::Xmm& vDst,
     const Xbyak::Operand& op) {
     if (is_valid_isa(x64::avx)) {
         vandnps(vDst, vSrs, op);
-    }
-    else {
+    } else {
         if (!vDst.isEqualIfNotInherited(vSrs)) {
             movups(vDst, vSrs);
         }
@@ -276,17 +250,14 @@ void jit_base::uni_vandnps(const Xbyak::Xmm& vDst,
 void jit_base::uni_vpbroadcastd(const Xbyak::Xmm& x, const Xbyak::Operand& op) {
     if (is_valid_isa(x64::avx2)) {
         vpbroadcastd(x, op);
-    }
-    else if (is_valid_isa(x64::avx)) {
+    } else if (is_valid_isa(x64::avx)) {
         if (op.isMEM()) {
             vbroadcastss(x, op.getAddress());
-        }
-        else {
+        } else {
             vmovss(x, x, op);
             vpshufd(x, x, 0x0);
         }
-    }
-    else {
+    } else {
         movss(x, op);
         pshufd(x, x, 0x0);
     }
@@ -295,12 +266,10 @@ void jit_base::uni_vpbroadcastd(const Xbyak::Xmm& x, const Xbyak::Operand& op) {
 void jit_base::uni_vpbroadcastd(const Xbyak::Ymm& x, const Xbyak::Operand& op) {
     if (is_valid_isa(x64::avx2)) {
         vpbroadcastd(x, op);
-    }
-    else {
+    } else {
         if (op.isMEM()) {
             vbroadcastss(x, op.getAddress());
-        }
-        else {
+        } else {
             const Xbyak::Xmm t(x.getIdx());
             if (!t.isEqualIfNotInherited(op)) {
                 vmovss(t, t, op);
@@ -398,14 +367,11 @@ void jit_base::store(const Xbyak::Address& dstAddr,
         const size_t offset = i * typeSize;
         if (typeSize == 1) {
             uni_vpextrb(ptr[dstAddr.getRegExp() + offset], vSrc, i);
-        }
-        else if (typeSize == 2) {
+        } else if (typeSize == 2) {
             uni_vpextrw(ptr[dstAddr.getRegExp() + offset], vSrc, i);
-        }
-        else if (typeSize == 4) {
+        } else if (typeSize == 4) {
             uni_vpextrd(ptr[dstAddr.getRegExp() + offset], vSrc, i);
-        }
-        else if (typeSize == 8) {
+        } else if (typeSize == 8) {
             uni_vpextrq(ptr[dstAddr.getRegExp() + offset], vSrc, i);
         }
     }
@@ -435,14 +401,11 @@ void jit_base::store(const Xbyak::Address& dstAddr,
             const size_t offset = offset0 + j * typeSize;
             if (typeSize == 8) {
                 uni_vpextrq(ptr[dstAddr.getRegExp() + offset], xmmSrc, j);
-            }
-            else if (typeSize == 4) {
+            } else if (typeSize == 4) {
                 uni_vpextrd(ptr[dstAddr.getRegExp() + offset], xmmSrc, j);
-            }
-            else if (typeSize == 2) {
+            } else if (typeSize == 2) {
                 uni_vpextrw(ptr[dstAddr.getRegExp() + offset], xmmSrc, j);
-            }
-            else if (typeSize == 1) {
+            } else if (typeSize == 1) {
                 uni_vpextrb(ptr[dstAddr.getRegExp() + offset], xmmSrc, j);
             }
         }
